@@ -27,23 +27,30 @@ public:
         uint32 diff = 2;
         if (action == GOSSIP_ACTION_INFO_DEF + 1)
         {
-            if (!sConfigMgr->GetBoolDefault("instanceReset.NormalModeOnly", false))
-                diff = MAX_DIFFICULTY;
-            for (uint8 i = 0; i < diff; ++i)
+            if (!player->IsActiveQuest(30000)) // icc speedrun dependency
             {
-                BoundInstancesMap const& m_boundInstances = sInstanceSaveMgr->PlayerGetBoundInstances(player->GetGUIDLow(), Difficulty(i));
-                for (BoundInstancesMap::const_iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
+                if (!sConfigMgr->GetBoolDefault("instanceReset.NormalModeOnly", false))
+                diff = MAX_DIFFICULTY;
+                for (uint8 i = 0; i < diff; ++i)
                 {
-                    if (itr->first != player->GetMapId())
+                    BoundInstancesMap const& m_boundInstances = sInstanceSaveMgr->PlayerGetBoundInstances(player->GetGUIDLow(), Difficulty(i));
+                    for (BoundInstancesMap::const_iterator itr = m_boundInstances.begin(); itr != m_boundInstances.end();)
                     {
-                        sInstanceSaveMgr->PlayerUnbindInstance(player->GetGUIDLow(), itr->first, Difficulty(i), true, player);
-                        itr = m_boundInstances.begin();
+                        if (itr->first != player->GetMapId())
+                        {
+                            sInstanceSaveMgr->PlayerUnbindInstance(player->GetGUIDLow(), itr->first, Difficulty(i), true, player);
+                            itr = m_boundInstances.begin();
+                        }
+                        else
+                            ++itr;
                     }
-                    else
-                        ++itr;
                 }
+                creature->MonsterWhisper("Your instances have been reset." , player);
             }
-            creature->MonsterWhisper("Your instances have been reset." , player);
+            else
+            {
+                creature->MonsterWhisper("Anti-cheat: Complete or abandon speedrun quest first!" , player);
+            }           
             CloseGossipMenuFor(player);
         }
         return true;
